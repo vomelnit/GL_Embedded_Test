@@ -14,7 +14,7 @@ void Error_Handler(int case_num){
 _Bool Check_str_for_digits(char* str){
 	unsigned int len = strlen(str);
 	for (int i=0; i<len; i++){
-		if ((str[i]<='0')||(str[i]>='9')) return false;
+		if ((str[i]<'0')||(str[i]>'9')) return false;
 	}
 	return true;
 }
