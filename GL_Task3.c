@@ -1,126 +1,135 @@
-    #include<stdio.h>
-    #include<string.h>
-    #include<stdlib.h>
-    #include<dirent.h>
+#include<stdio.h>
+#include<string.h>
+#include<stdlib.h>
+#include<dirent.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <stdbool.h>
+#include <time.h>
 
 
 void printFileProperties(struct stat stats)
 {
-    //struct tm dt;
+    struct tm dt;
 
-    // File permissions
-    //printf("File access: ");
-    if (stats.st_mode & R_OK){ printf("r");} else printf("-");
-    if (stats.st_mode & W_OK){ printf("w");} else printf("-");
-    if (stats.st_mode & X_OK){ printf("x");} else printf("-");
+    // File permissions and directory/file
+	if (S_ISDIR(stats.st_mode)){ printf("d");} else printf("-");
+	if (stats.st_mode & S_IRUSR){ printf("r");} else printf("-");
+	if (stats.st_mode & S_IWUSR){ printf("w");} else printf("-");
+	if (stats.st_mode & S_IXUSR){ printf("x");} else printf("-");
+	if (stats.st_mode & S_IRGRP){ printf("r");} else printf("-");
+	if (stats.st_mode & S_IWGRP){ printf("w");} else printf("-");
+	if (stats.st_mode & S_IXGRP){ printf("x");} else printf("-");
+	if (stats.st_mode & S_IROTH){ printf("r");} else printf("-");
+	if (stats.st_mode & S_IROTH){ printf("w");} else printf("-");
+	if (stats.st_mode & S_IROTH){ printf("x");} else printf("-");
 
-    // File size
-    printf(" %ld", stats.st_size);
 
-    // Get file creation time in seconds and 
-    // convert seconds to date and time format
-    /*dt = *(gmtime(&stats.st_ctime));
-    printf("\nCreated on: %d-%d-%d %d:%d:%d", dt.tm_mday, dt.tm_mon, dt.tm_year + 1900, 
-                                              dt.tm_hour, dt.tm_min, dt.tm_sec);
 
-    // File modification time
-    dt = *(gmtime(&stats.st_mtime));
-    printf("\nModified on: %d-%d-%d %d:%d:%d", dt.tm_mday, dt.tm_mon, dt.tm_year + 1900, 
-                                              dt.tm_hour, dt.tm_min, dt.tm_sec);
-	*/
+	//Links,user_id of file owner, group_id of file owner, size in bytes
+	printf(" %5ld", stats.st_nlink);
+	printf(" %6d", stats.st_uid);
+	printf(" %6d", stats.st_gid);
+	printf(" %11ld", stats.st_size);
+
+	//Time of last modifications
+	dt = *(gmtime(&stats.st_mtime));
+	printf(" %4.2d.%2.2d.%4d %4.2d:%2.2d",dt.tm_mday,dt.tm_mon,dt.tm_year + 1900,dt.tm_hour,dt.tm_min);
+
 }
+
+
+
+void Print_string_about_element(char* name,char* directory){
+	
+		struct stat stats;
+
+		char fullpath[300];
+		char data_row_of_element[1000];
+		strcpy(fullpath,directory);
+		
+		strcat(fullpath,"/");
+		strcat(fullpath,name);
+		stat(fullpath, &stats);
+		printFileProperties(stats);
+		
+		
+		printf("\t\t%s\n",name);
+	
+	
+}
+
+char working_directory[200];
 char cwd[1000];
+//strcat(cwd,".");
 struct stat stats;
 char file[100];
 char if_size_show = 0;
-char if_hidden_show =0;
+char if_hidden_show = 0;
 
     int main(int argc,char **argv)
     {
     	struct dirent **namelist;
     	int n;
-    	if(argc < 1)
-    	{
+    	if(argc < 1){
     		exit(EXIT_FAILURE);
     	}
-    	else if (argc == 1)
-    	{
-    		n=scandir(".",&namelist,NULL,alphasort);
-		getcwd(cwd, sizeof(cwd));
+    	else if (argc == 1){
+		getcwd(working_directory, sizeof(working_directory));
     	}
-    	else if (argc == 2)
-    	{	
-		if (strcmp(argv[1],"-la")==0) {if_size_show = 1; if_hidden_show = 1;}
-		if (strcmp(argv[1],"-a")==0) {if_hidden_show = 1;}
-		if (strcmp(argv[1],"-l")==0) {if_size_show = 1;}
-		
-    		n = scandir(".", &namelist, NULL, alphasort);
+    	else if ((argc >= 2)&&(argc<=4)){	
+		for (int i=1;i<argc;i++){
+			if (strcmp(argv[i],"-la") == 0) {if_size_show = 1; if_hidden_show = 1;}
+			else if (strcmp(argv[i],"-a") == 0) {if_hidden_show = 1;}
+			else if (strcmp(argv[i],"-l") == 0) {if_size_show = 1;}
+			else if (argv[i][0]=='/') strcat(working_directory,argv[1]);
+			else {
+				getcwd(working_directory, sizeof(cwd)); 
+				strcat(working_directory,"/");
+				strcat(working_directory,argv[1]);
+			}
+
+    		}
+		if (strlen(working_directory)==0) getcwd(working_directory, sizeof(cwd)); 	
     	}
+	else{	
+		printf("Wrong number of arguments");
+		exit(EXIT_FAILURE);
+    	}
+
+
+	n=scandir(working_directory,&namelist,NULL,alphasort);
+
     	if(n < 0)
     	{
     		perror("scandir");
     		exit(EXIT_FAILURE);
     	}
     	else
-    	{
+    	{	
+		char current_element_name[300];
+		char* row_of_data;
     		while (n--)
     		{	
-			//printf("%s\n",argv[1]);			
-			//printf("%d %d\n",if_hidden_show,if_size_show);
-			if ((if_size_show == 1)&&(if_hidden_show==1)){
-				
-				char *file_path=(char*)malloc(sizeof(char)*500);	
-						
-				strcat(file_path,cwd);
-				strcat(file_path,"/");
-	    			
-				strcat(file_path,namelist[n]->d_name);
-				//printf("File:%s\n",file_path);
-				
-				stat(file_path, &stats);
-				
-				/*printf("\nFile access: ");
-	   			 if (stats.st_mode & R_OK) printf("read ");*/
-				printFileProperties(stats);
-				printf("   %s \n",namelist[n]->d_name);
-				free(file_path);
-			}
-			else if ((if_size_show == 0)&&(if_hidden_show==1)){
-				printf("\n%s",namelist[n]->d_name);
+			
+			strcpy(current_element_name,namelist[n]->d_name);
+
+			if ((if_size_show == 0)&&(if_hidden_show==1)){
+				printf("%s\n",current_element_name);
 			}
 			else if ((if_size_show == 0)&&(if_hidden_show==0)){
-				char *file=(char*)malloc(sizeof(char)*100);
-				strcat(file,namelist[n]->d_name);
-				char first_sym = file[0];
-				if(first_sym!='.') printf("\n%s",namelist[n]->d_name);
-				free(file);
+				if(current_element_name[0]!='.') printf("%s\n",current_element_name);
+			}
+			else if ((if_size_show == 1)&&(if_hidden_show==1)){
+				
+				
+				Print_string_about_element(current_element_name,working_directory);
+				
+				
 			}
 			else if ((if_size_show == 1)&&(if_hidden_show==0)){
-				char *file_path=(char*)malloc(sizeof(char)*500);	
-						
-				strcat(file_path,cwd);
-				strcat(file_path,"/");
-	    			
-				strcat(file_path,namelist[n]->d_name);
-				//printf("File:%s\n",file_path);
-				
-				stat(file_path, &stats);
-				
-				/*printf("\nFile access: ");
-	   			 if (stats.st_mode & R_OK) printf("read ");*/
-				char *file=(char*)malloc(sizeof(char)*100);
-				strcat(file,namelist[n]->d_name);
-				char first_sym = file[0];
-				if(first_sym!='.') {printFileProperties(stats); 
-					printf("  %s \n",namelist[n]->d_name);
-				}
-				free(file);
-				
-				free(file_path);
+				if(current_element_name[0]!='.') Print_string_about_element(current_element_name,working_directory);
 			}
-			//else printf("\n%s",namelist[n]->d_name);
     			free(namelist[n]);
 			
     		}
