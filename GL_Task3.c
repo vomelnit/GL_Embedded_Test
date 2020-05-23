@@ -8,6 +8,8 @@
 #include <time.h>
 
 
+
+//Func print file or dir data
 void printFileProperties(struct stat stats)
 {
     struct tm dt;
@@ -39,15 +41,13 @@ void printFileProperties(struct stat stats)
 }
 
 
-
+// Func get data about file/dr and print it
 void Print_string_about_element(char* name,char* directory){
 	
 		struct stat stats;
-
-		char fullpath[300];
-		char data_row_of_element[1000];
-		strcpy(fullpath,directory);
+		char fullpath[1000];
 		
+		strcpy(fullpath,directory);
 		strcat(fullpath,"/");
 		strcat(fullpath,name);
 		stat(fullpath, &stats);
@@ -59,11 +59,8 @@ void Print_string_about_element(char* name,char* directory){
 	
 }
 
-char working_directory[200];
-char cwd[1000];
-//strcat(cwd,".");
+char working_directory[1000];
 struct stat stats;
-char file[100];
 char if_size_show = 0;
 char if_hidden_show = 0;
 
@@ -71,6 +68,8 @@ char if_hidden_show = 0;
     {
     	struct dirent **namelist;
     	int n;
+
+	//Analizing entered arguments
     	if(argc < 1){
     		exit(EXIT_FAILURE);
     	}
@@ -84,13 +83,13 @@ char if_hidden_show = 0;
 			else if (strcmp(argv[i],"-l") == 0) {if_size_show = 1;}
 			else if (argv[i][0]=='/') strcat(working_directory,argv[1]);
 			else {
-				getcwd(working_directory, sizeof(cwd)); 
+				getcwd(working_directory, sizeof(working_directory)); 
 				strcat(working_directory,"/");
 				strcat(working_directory,argv[1]);
 			}
 
     		}
-		if (strlen(working_directory)==0) getcwd(working_directory, sizeof(cwd)); 	
+		if (strlen(working_directory)==0) getcwd(working_directory, sizeof(working_directory)); 	
     	}
 	else{	
 		printf("Wrong number of arguments");
@@ -108,12 +107,13 @@ char if_hidden_show = 0;
     	else
     	{	
 		char current_element_name[300];
-		char* row_of_data;
+
     		while (n--)
     		{	
 			
 			strcpy(current_element_name,namelist[n]->d_name);
-
+			
+			//Data output depends on entered arguments
 			if ((if_size_show == 0)&&(if_hidden_show==1)){
 				printf("%s\n",current_element_name);
 			}
